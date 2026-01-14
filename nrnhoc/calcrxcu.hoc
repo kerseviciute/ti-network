@@ -1,0 +1,175 @@
+// based on calcrxc.hoc,v 1.3 2008/12/02 22:03:59
+
+/*
+This code does two things:
+
+
+1.  Calculates the transfer resistances between a monopolar
+extracellular recording electrode and a model neuron.  
+Assumes that the intervening bath and tissue can be treated 
+as linear.
+
+Suppose a patch of membrane centered at (x,y,z) generates 
+transmembrane current Im(x,y,z).  The membrane will produce
+a potential Vel that can be recorded at the extracellular 
+electrode and is given by
+  Vel = rx(x,y,z) Im(x,y,z)
+where rx(x,y,z) is the transfer resistance between the 
+recording electrode and (x,y,z).
+
+A conductive sphere of radius r0 is suspended in an infinite 
+volume of solution that has resistivity rho [ohm cm].  Ignoring 
+electrochemical effects at the electrode|solution interface, 
+what is the resistance between the surface of the sphere and 
+an infinitely distant ground electrode?
+
+The surface area of a sphere with radius r is 4 PI r^2.
+The resistance of a shell with thickness dr is 
+  rho dr / 4 PI r^2
+and the resistance is therefore
+    inf
+  INTEGRAL rho dr / 4 PI r^2
+    r0
+                     inf
+   = - rho / 4 PI r |     = rho / 4 PI r0
+                     r0
+So to a first approximation, a source of current I produces a 
+field in which potential V is given by 
+  V = I rho / 4 PI r
+where r is the distance from the center of the current source.
+The approximation is best when r is large compared to the 
+physical size of the current source.
+
+
+2.  Calculates the effect of a uniform extracellular field on 
+the extracellular potential adjacent to the membrane of a model 
+neuron.
+
+Assume a uniform field with orientation specified by polar coordinates:
+  phi is the angle between the field vector and the z axis.
+  theta is the angle between the x axis 
+    and the projection of the field vector onto the xy plane
+The isopotential surfaces are perpendicular to the orientation 
+of the field, and uniformly spaced.
+
+Without loss of generality, we may assume that the potential is 0 
+for all points on the isopotential surface that passes through (0,0,0).
+Let this be called the zero potential plane.
+
+The potential at any point xyz is proportional to the distance of 
+that point from the zero potential plane.  The distance is given by 
+the dot product of the vector from (0,0,0) to (x,y,z)
+  p = x*ux + y*uy + z*uz
+with the field's unit vector (i.e. the unit vector that is orthogonal 
+to the zero potential plane):
+  ufield = sin(phi)*cos(theta)*ux + sin(phi)*sin(theta)*uy + cos(phi)*uz
+where ux, uy, and uz are the unit vectors along the x, y, and z axes.
+Thus the extracellular potential at (x,y,z) is
+  V(x,y,z) = -E * p dot ufield
+           = -E * (x*sin(phi)*cos(theta) + y*sin(phi)*sin(theta) + z*cos(phi))
+           = -E * d
+where
+  d is the distance of the point from the zero potential plane
+  E is the field intensity in units of potential/distance, and is >= 0.
+
+Note:  why the minus sign in front of E?
+Because a positive charge _loses_ potential energy as it moves in the 
+direction of the field ("electrical field lines move away from the 
+positive electrode and toward the negative electrode").
+
+So the parameters are
+  Orientation
+    phi    angle from the z axis
+    theta  angle of projection onto the xy plane,
+             measured counterclockwise from the x axis
+  Strength
+    E      field intensity in (volt/m)
+
+How this information is used to simulate extracellular stimulation:
+Insert the extracellular and xtrau mechanisms in all sections that are 
+subject to the extracellular field.
+Compute the transfer resistance rx for every internal node of each 
+section that contains xtrau, as illustrated below.
+Also compute the distance d of each of these nodes from the zero 
+potential plane.
+Construct a Vector that specifies the time course of E.
+For each internal node, use this Vector to drive E_xtrau(x).  
+The xtrau mechanism uses the d values to convert the stimulus field strength
+waveform into the proper amplitude and sign of the local extracellular field, 
+and it uses the rx values to calculate the contribution of the local membrane 
+current to the potential that would be detected by the extracelluar recording
+electrode.
+
+If rho is changed, setrx() must be invoked to make the change take effect.
+*/
+
+// set up the transfer resistances
+
+// what is the approximate resistivity of tissue anyway?
+rho = 35.4  // ohm cm, squid axon cytoplasm
+	    // for squid axon, change this to seawater's value
+	    // for mammalian cells, change to brain tissue or Ringer's value
+
+// assume monopolar recording
+// electrode coordinates:
+// for this test, default location is 50 microns horizontal from the cell's 0,0,0
+XE = 50  // um
+YE = 0
+ZE = 0
+
+proc setrx() {
+  forall {
+//    if (ismembrane("xtra")) {
+    if (ismembrane("xtrau")) {
+// avoid nodes at 0 and 1 ends, so as not to override values at internal nodes
+      for (x,0) {
+//        r = sqrt((x_xtra(x) - xe)^2 + (y_xtra(x) - ye)^2 + (z_xtra(x) - ze)^2)
+        r = sqrt((x_xtrau(x) - xe)^2 + (y_xtrau(x) - ye)^2 + (z_xtrau(x) - ze)^2)
+        // 0.01 converts rho's cm to um and ohm to megohm
+//        rx_xtra(x) = (rho / 4 / PI)*(1/r)*0.01
+        rx_xtrau(x) = (rho / 4 / PI)*(1/r)*0.01
+      }
+    }
+  }
+}
+
+create sElec  // bogus section to show extracell stim/rec electrode location
+objref pElec  // bogus PointProcess just to show stim location
+objref gElec  // will be a Shape that shows extracellular electrode location
+
+gElec = new Shape(0)  // create it but don't map it to the screen yet
+// gElec.size(-245.413,275.413,-250,270)
+// gElec.view(-245.413, -250, 520.827, 520, 629, 104, 201.6, 201.28)
+
+proc drawelec() {
+	sElec {
+		// make it 1 um long
+		pt3dclear()
+		pt3dadd($1-0.5, $2, $3, 1)
+		pt3dadd($1+0.5, $2, $3, 1)
+		pElec = new IClamp(0.5)
+	}
+	gElec.point_mark(pElec, 2)  // make it red
+}
+
+
+proc setelec() {
+	xe = $1
+	ye = $2
+	ze = $3
+    // setrx(xe, ye, ze)
+	setrx()
+	// drawelec(xe, ye, ze)
+}
+
+setelec(XE, YE, ZE)  // put stim electrode at (x, y, z)
+
+// print "Use setelec(x, y, z) to change location of extracellular recording electrode"
+/*
+    xpanel("Extracellular Electrode Location", 0)
+      xlabel("xyz coords in um")
+      xvalue("x", "XE", 1, "setelec(XE,YE,ZE)", 0, 1)
+      xvalue("y", "YE", 1, "setelec(XE,YE,ZE)", 0, 1)
+      xvalue("z", "ZE", 1, "setelec(XE,YE,ZE)", 0, 1)
+    xpanel(855,204)
+*/

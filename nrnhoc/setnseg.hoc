@@ -1,0 +1,10 @@
+D_LAMBDA = 0.1 // chop each section into smallest odd number of segments
+  // such no segment is longer than D_LAMBDA * lambda_100Hz
+
+proc set_nseg() {
+//  forsec all { nseg = int((L/($1*lambda_f(100))+.9)/2)*2 + 1  }
+  // Migliore's cells may not have an "all" set
+  forall { nseg = int((L/($1*lambda_f(100))+.9)/2)*2 + 1  }
+}
+
+set_nseg(D_LAMBDA)

@@ -1,0 +1,144 @@
+// based partly on calcrxc.hoc,v 1.3 2008/12/02 22:03:59
+
+/*
+Calculates the effect of a uniform extracellular field on the 
+extracellular potential adjacent to the membrane of a model neuron.
+
+Assume a uniform field with orientation specified by polar coordinates:
+  phi is the angle between the field vector and the z axis.
+  theta is the angle between the x axis 
+    and the projection of the field vector onto the x axis.
+The isopotential surfaces are perpendicular to the orientation 
+of the field, and uniformly spaced.
+
+Without loss of generality, we may assume that the potential is 0 
+for all points on the isopotential surface that passes through (0,0,0).
+Let this be called the zero potential plane.
+
+The potential at any point xyz is proportional to the distance of 
+that point from the zero potential plane.  The distance is given by 
+the dot product of the vector from (0,0,0) to (x,y,z)
+  p = x*ux + y*uy + z*uz
+with the field's unit vector (i.e. the unit vector that is orthogonal 
+to the zero potential plane):
+  ufield = sin(phi)*cos(theta)*ux + sin(phi)*sin(theta)*uy + cos(phi)*uz
+where ux, uy, and uz are the unit vectors along the x, y, and z axes.
+Thus the extracellular potential at (x,y,z) is
+  V(x,y,z) = -E * p dot ufield
+           = -E * (x*sin(phi)*cos(theta) + y*sin(phi)*sin(theta) + z*cos(phi))
+           = -E * d
+where
+  d is the distance of the point from the zero potential plane
+  E is the field intensity in units of potential/distance, and is >= 0.
+
+Note:  why the minus sign in front of E?
+Because a positive charge _loses_ potential energy as it moves in the 
+direction of the field ("electrical field lines move away from the 
+positive electrode and toward the negative electrode").
+
+So the parameters are
+  Orientation
+    phi    angle from the z axis
+    theta  angle of projection onto the xy plane,
+             measured counterclockwise from the x axis
+  Strength
+    E      field intensity in (volt/m)
+
+
+How this information is used to simulate extracellular stimulation:
+Insert the extracellular and xtrau mechanisms in all sections that are 
+subject to the extracellular field.
+Compute the transfer resistance rx for every internal node of each 
+section that contains xtrau, as illustrated below.
+Also compute the distance d of each of these nodes from the zero 
+potential plane.
+Construct a Vector that specifies the time course of E.
+For each internal node, use this Vector to drive E_xtrau(x).  
+The xtrau mechanism uses the d values to convert the stimulus field strength
+waveform into the proper amplitude and sign of the local extracellular field, 
+and it uses the rx values to calculate the contribution of the local membrane 
+current to the potential that would be detected by the extracelluar recording
+electrode.
+
+If rho, phi, or theta is changed, new_elec() must be invoked 
+to make the changes take effect.
+*/
+
+// field orientation
+// default is parallel to y axis, positive direction upward
+PHIDEG = 90  // degrees away from the z axis
+THETADEG = 90  // degrees counterclockwise from the x axis
+// note that PHIDEG and THETADEG are in degrees, but phi and theta are in radians
+
+proc setd() { local ex, ey, ez
+  // calculate the x, y, and z components of the field's unit vector
+  ex = sin(phi)*cos(theta)
+  ey = sin(phi)*sin(theta)
+  ez = cos(phi)
+
+  forall {
+    if (ismembrane("xtrau")) {
+// avoid nodes at 0 and 1 ends, so as not to override values at internal nodes
+      for (x,0) d_xtrau(x) = (x_xtrau(x)*ex + y_xtrau(x)*ey + z_xtrau(x)*ez)
+    }
+  }
+}
+
+create sField  // bogus section to show orientation of extracell field
+objref pField  // bogus PointProcess to show "positive" orientation of field
+RED = 2
+BLUE = 3
+
+// reuse gElec for this
+// objref gElec  // a Shape that shows extracellular electrode location
+
+// argument is length of the section used to indicate the field orientation
+proc drawfield() {
+	sField {
+		// draw it from origin to a user-assigned distance from the origin
+		pt3dclear()
+		pt3dadd(0, 0, 0, 1)
+		pt3dadd($1*sin(phi)*cos(theta), $1*sin(phi)*sin(theta), $1*cos(phi), 1)
+        doNotify()
+		gElec.color(RED) // make the field indicator section red
+        doNotify()
+		pField = new IClamp(1) // so its 1 end can be marked by a dot
+		gElec.point_mark(pField, BLUE)  // a blue dot
+	}
+}
+
+proc setfield() {
+	theta = $2*PI/180
+	phi = $3*PI/180
+	setd()
+	drawfield($1)
+}
+
+FIELDLENGTH = 100 // for starters
+
+setfield(FIELDLENGTH, THETADEG, PHIDEG)  // set orientation of field
+
+proc redrawfield() {
+	sField {
+		// draw it from origin to a user-assigned distance from the origin
+		pt3dchange(1, $1*sin(phi)*cos(theta), $1*sin(phi)*sin(theta), $1*cos(phi), 1)
+		doNotify()
+		gElec.color(RED) // make the field indicator section red
+	}
+}
+
+proc changefield() {
+	theta = $2*PI/180
+	phi = $3*PI/180
+	setd()
+	redrawfield($1)
+}
+
+/*
+    xpanel("Extracellular Field Orientation", 0)
+      xlabel("polar coords in um and degrees")
+      xvalue("length of field indicator", "FIELDLENGTH", 1, "changefield(FIELDLENGTH,THETADEG,PHIDEG)", 0, 1)
+      xvalue("theta", "THETADEG", 1, "changefield(FIELDLENGTH,THETADEG,PHIDEG)", 0, 1)
+      xvalue("phi", "PHIDEG", 1, "changefield(FIELDLENGTH,THETADEG,PHIDEG)", 0, 1)
+    xpanel(629,371)
+*/

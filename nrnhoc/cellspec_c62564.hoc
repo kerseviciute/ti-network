@@ -1,0 +1,5 @@
+load_file("geoc62564.hoc")
+numbasal = 61
+numapical=53
+numuser5=42
+
