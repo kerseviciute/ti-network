@@ -9,10 +9,20 @@ begintemplate CA1
   create dendrite[numbasal]
   create apical_dendrite[numapical]
   create user5[numuser5]
+  objref all
 
-  public soma, axon, dendrite, apical_dendrite, user5
+  public soma, axon, dendrite, apical_dendrite, user5, all
 
   proc init() {
+    all = new SectionList()
+
+    soma[0] all.append()
+    axon[0] all.append()
+
+    for i = 0, numbasal - 1 dendrite[i] all.append()
+    for i = 0, numapical - 1 apical_dendrite[i] all.append()
+    for i = 0, numuser5 - 1 user5[i] all.append()
+
     access soma[0]
     pt3dclear()
     pt3dadd(0.647,-0.235,0.157,15.702)
