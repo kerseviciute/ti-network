@@ -14,6 +14,8 @@ nrnivmodl nrnmod
 
 ## Tasks
 
+### Jan 2026
+
 **Step 1.** Create a two-neuron network.
 - [ ] Find out how to duplicate and translate the morphology.
 - [ ] Make sure both neurons react to external electric fields.
