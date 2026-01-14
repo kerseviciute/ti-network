@@ -1,10 +1,14 @@
 begintemplate CA1
 
+  numbasal = 61
+  numapical = 53
+  numuser5 = 42
+
   create axon[1]
   create soma[1]
-  create dendrite[61]
-  create apical_dendrite[53]
-  create user5[42]
+  create dendrite[numbasal]
+  create apical_dendrite[numapical]
+  create user5[numuser5]
 
   public soma, axon, dendrite, apical_dendrite, user5
 
