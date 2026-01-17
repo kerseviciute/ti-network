@@ -19,8 +19,9 @@ nrnivmodl nrnmod
 **Step 1.** Create a two-neuron network.
 - [x] Duplicate the neuron morphology.
 - [x] Translate the morphology.
-- [ ] Include biophysical and all other defined mechanisms.
-- [ ] Make sure both neurons react to external electric fields.
+- [x] Include biophysical and all other defined mechanisms.
+- [x] Make sure both neurons react to external electric fields.
+- [ ] Reproduce previous subthreshold amplitude results with current single neuron setup.
 - [ ] Set up a method to comfortably translate the morphology (shift to side, rotate on both axes).
 - [ ] Connect both neurons through the soma (unidirectional).
 

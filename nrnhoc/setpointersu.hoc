@@ -16,6 +16,4 @@ proc setpointers() { local done
   }
 }
 
-print "After any change to cell geometry or nseg, be sure to invoke setpointers()"
-
-setpointers()
+// print "After any change to cell geometry or nseg, be sure to invoke setpointers()"
