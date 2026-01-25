@@ -89,7 +89,23 @@ class TI:
     object.__setattr__(self, "_ti_ready", True)
     self.update_stimulus()
     self.update_field()
+  
+  def get_optimal_duration(self, min_oscillations = 10):
+    """
+    Calculates the optimal stimulation duration to include
+    a specific number of beat frequency oscillations.
+    
+    :param min_oscillations: number of expected beat oscillations during the
+                             stimulation period.
+    """
+    if self.beat == 0:
+      return None
 
+    oscillations_per_second = self.beat
+    optimal_duration = min_oscillations / oscillations_per_second * 1000
+
+    # Round to hundreds of ms
+    return math.ceil(optimal_duration / 100) * 100
 
 class NeuronCA1:
   def __init__(self, ap_threshold = -20):
@@ -184,7 +200,7 @@ class NeuronCA1:
 
       self._pt3d0[sec] = (xs, ys, zs, ds)
 
-  def reset(self):
+  def reset_orientation(self):
     for sec in self.cell.all:
       n = int(h.n3d(sec = sec))
       if n == 0: continue
@@ -202,7 +218,7 @@ class NeuronCA1:
     Works only if sections have 3D points (pt3dadd).
     """
     if reset:
-      self.reset()
+      self.reset_orientation()
 
     for sec in self.cell.all:
       n = int(h.n3d(sec = sec))
@@ -238,7 +254,7 @@ class NeuronCA1:
       axis: "x" | "y" | "z"
     """
     if reset:
-      self.reset()
+      self.reset_orientation()
 
     theta = math.radians(degrees)
     c, s = math.cos(theta), math.sin(theta)

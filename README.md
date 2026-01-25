@@ -21,7 +21,7 @@ nrnivmodl nrnmod
 - [x] Translate the morphology.
 - [x] Include biophysical and all other defined mechanisms.
 - [x] Make sure both neurons react to external electric fields.
-- [ ] Reproduce previous subthreshold amplitude results with current single neuron setup.
+- [x] Reproduce previous subthreshold amplitude results with current single neuron setup.
 - [x] Set up a method to comfortably translate the morphology (shift to side, rotate on both axes).
 - [ ] Connect both neurons through the soma (unidirectional).
 
