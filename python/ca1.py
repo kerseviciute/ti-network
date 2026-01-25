@@ -4,6 +4,7 @@ import plotly
 import matplotlib
 import time
 import numpy as np
+import math
 
 
 class Singleton(type):
@@ -110,6 +111,9 @@ class NeuronCA1:
     ap_connection.threshold = ap_threshold
     ap_connection.record(self.__spike_times)
 
+    self._pt3d0 = {}
+    self.save_position()
+
   @property
   def voltage(self):
     return np.array(self.__v)
@@ -166,11 +170,40 @@ class NeuronCA1:
 
     print("Neuron state has been reset")
 
-  def translate(self, dx = 0.0, dy = 0.0, dz = 0.0):
+  def save_position(self):
+    self._pt3d0 = {}
+
+    for sec in self.cell.all:
+      n = int(h.n3d(sec = sec))
+      if n == 0: continue
+
+      xs = [float(h.x3d(i, sec = sec)) for i in range(n)]
+      ys = [float(h.y3d(i, sec = sec)) for i in range(n)]
+      zs = [float(h.z3d(i, sec = sec)) for i in range(n)]
+      ds = [float(h.diam3d(i, sec = sec)) for i in range(n)]
+
+      self._pt3d0[sec] = (xs, ys, zs, ds)
+
+  def reset(self):
+    for sec in self.cell.all:
+      n = int(h.n3d(sec = sec))
+      if n == 0: continue
+      if sec not in self._pt3d0: continue
+
+      xs, ys, zs, ds = self._pt3d0[sec]
+      for i in range(n):
+        h.pt3dchange(i, xs[i], ys[i], zs[i], ds[i], sec = sec)
+    
+    h.setpointers()
+
+  def translate(self, dx = 0.0, dy = 0.0, dz = 0.0, reset = True):
     """
     Translate all pt3d points of every section in `cell` by (dx, dy, dz).
     Works only if sections have 3D points (pt3dadd).
     """
+    if reset:
+      self.reset()
+
     for sec in self.cell.all:
       n = int(h.n3d(sec = sec))
       if n == 0:
@@ -182,6 +215,69 @@ class NeuronCA1:
         z = h.z3d(i, sec = sec) + dz
         d = h.diam3d(i, sec = sec)
         h.pt3dchange(i, x, y, z, d, sec = sec)
+    
+    h.setpointers()
+
+  def soma_3d(self):
+    sx = sy = sz = 0.0
+    n_total = 0
+
+    for sec in self.cell.soma:
+      n = int(h.n3d(sec = sec))
+      for i in range(n):
+        sx += float(h.x3d(i, sec = sec))
+        sy += float(h.y3d(i, sec = sec))
+        sz += float(h.z3d(i, sec = sec))
+        n_total += 1
+
+    return sx / n_total, sy / n_total, sz / n_total
+
+  def rotate(self, degrees = 0.0, axis = "z", reset = True):
+    """
+      Rotate all pt3d points around an axis by `degrees`.
+      axis: "x" | "y" | "z"
+    """
+    if reset:
+      self.reset()
+
+    theta = math.radians(degrees)
+    c, s = math.cos(theta), math.sin(theta)
+
+    ox, oy, oz = self.soma_3d()
+
+    axis = axis.lower()
+    if axis not in {"x", "y", "z"}:
+      raise ValueError('axis must be "x", "y", or "z"')
+
+    for sec in self.cell.all:
+      n = int(h.n3d(sec = sec))
+      if n == 0:
+        continue
+
+      for i in range(n):
+        x = float(h.x3d(i, sec = sec)) - ox
+        y = float(h.y3d(i, sec = sec)) - oy
+        z = float(h.z3d(i, sec = sec)) - oz
+        d = float(h.diam3d(i, sec = sec))
+
+        x2 = y2 = z2 = 0.0
+        match axis:
+          case "x":
+            y2 = y * c - z * s
+            z2 = y * s + z * c
+            x2 = x
+          case "y":
+            x2 = x * c + z * s
+            z2 = -x * s + z * c
+            y2 = y
+          case "z":
+            x2 = x * c - y * s
+            y2 = x * s + y * c
+            z2 = z
+
+        h.pt3dchange(i, x2 + ox, y2 + oy, z2 + oz, d, sec = sec)
+    
+    h.setpointers()
 
   def plot(self):
     sections = h.SectionList([sec for sec in self.cell.all])

@@ -22,7 +22,7 @@ nrnivmodl nrnmod
 - [x] Include biophysical and all other defined mechanisms.
 - [x] Make sure both neurons react to external electric fields.
 - [ ] Reproduce previous subthreshold amplitude results with current single neuron setup.
-- [ ] Set up a method to comfortably translate the morphology (shift to side, rotate on both axes).
+- [x] Set up a method to comfortably translate the morphology (shift to side, rotate on both axes).
 - [ ] Connect both neurons through the soma (unidirectional).
 
 **Step 2.** Set up the parameters of the two-neuron network.
@@ -30,6 +30,7 @@ nrnivmodl nrnmod
 - [ ] Test unconnected network: if both neurons behave the same, rotate one of them. They should react to TI differently due to different position in the electric field.
 
 **Step 3.** Evaluate subthreshold electric field amplitude for different parameter settings.
-- [ ] Test 1kHz and 9kHz carriers for 5Hz beat frequency. Evalute subthreshold amplitude dependence on the distance between the neurons and their relative position.
+- [ ] Define the parameter range to be tested.
+- [ ] Test 1kHz and 9kHz carriers for 5Hz beat frequency. Evaluate subthreshold amplitude dependence on the distance between the neurons and their relative position.
 - [ ] Subthreshold amplitude is defined as the minimum electric field amplitude when both neurons spike in a time window of 3 ms.
 - [ ] Test unidirectional connection in both directions.
