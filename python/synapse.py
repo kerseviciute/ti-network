@@ -126,6 +126,31 @@ class Synapse:
 
     return stimulus
 
+  @staticmethod
+  def generate_poisson_spike_times(seed, rate, duration):
+    """Generate Poisson-distributed spike times."""
+    np.random.seed(seed)
+
+    spikes = []
+    t = np.random.exponential(1000 / rate)
+    spikes.append(t)
+
+    while t < duration:
+        spikes.append(t)
+        isi = np.random.exponential(1000 / rate)  # Exponential ISI
+        t += isi
+
+    return spikes
+
+  @staticmethod
+  def poisson_stimulus(seed, rate, duration):
+    spike_times = Synapse.generate_poisson_spike_times(seed, rate, duration)
+
+    spike_vec = h.Vector(spike_times)
+    stimulus = h.VecStim()
+    stimulus.play(spike_vec)
+
+    return stimulus
 
   def find_optimal_conductance(self, initial_conductance, target_epsp_diff = 0.15, epsilon = 0.025, verbose = False, run_verbose = False):
     if verbose:

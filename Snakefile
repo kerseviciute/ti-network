@@ -1,7 +1,14 @@
+import numpy as np
+
 project = "ti-network"
+neurons = np.arange(0, 5)
+
+include: "rules/poisson.smk"
 
 rule all:
   input:
+    rules.poisson_10_1000_5_130_0.input,
+    rules.poisson_10_0_0_0_0.input,
     synapse_info = expand("output/{project}/synapses/synapse_info.csv", project = project)
 
 rule synapse_info:

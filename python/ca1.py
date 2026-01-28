@@ -352,6 +352,7 @@ class NeuronCA1:
 
 
 class Simulation:
+  # TODO: include TI ramp-up period?
   def __init__(self, neurons, ti = TI()):
     self.neurons = neurons
     self.ti = ti
