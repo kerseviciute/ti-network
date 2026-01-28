@@ -5,6 +5,7 @@ import matplotlib
 import time
 import numpy as np
 import math
+import random
 
 
 class Singleton(type):
@@ -149,7 +150,7 @@ class NeuronCA1:
     for section in self.cell.all:
       section.insert(mechanism)
 
-  def reset_state(self):
+  def reset_state(self, verbose = True):
     h.t = 0
 
     for section in self.cell.all:
@@ -184,7 +185,7 @@ class NeuronCA1:
         for segment in section:
           segment.e_pas = segment.e_pas + segment.i_hd / segment.g_pas
 
-    print("Neuron state has been reset")
+    if verbose: print("Neuron state has been reset")
 
   def save_position(self):
     self._pt3d0 = {}
@@ -323,6 +324,31 @@ class NeuronCA1:
     )
 
     fig.show()
+  
+  def generate_synapse_location(self, min_distance = 100, max_distance = 300, max_diameter = 1):
+    n_apical_dendrites = int(self.cell.numapical)
+
+    # Set distance reference to soma
+    h.distance(0, 0.5, sec = self.cell.soma[0])
+
+    while True:
+      dendrite = random.randint(0, n_apical_dendrites - 1)
+      position = random.uniform(0, 1)
+
+      dendrite_ref = self.cell.apical_dendrite[dendrite](position)
+
+      distance_to_soma = h.distance(dendrite_ref)
+      diameter = dendrite_ref.diam
+
+      if min_distance < distance_to_soma < max_distance and diameter < max_diameter:
+        break
+    
+    return {
+      "dendrite": dendrite,
+      "position": position,
+      "distance_to_soma": distance_to_soma,
+      "diameter": diameter
+    }
 
 
 class Simulation:
@@ -333,7 +359,7 @@ class Simulation:
   def get_dt(self):
     return 0.025 if self.ti.carrier < 5000 else 0.0025
 
-  def run(self, duration):
+  def run(self, duration, verbose = True):
     for neuron in self.neurons:
       neuron.reset_state()
 
@@ -341,8 +367,8 @@ class Simulation:
 
     h.dt = self.get_dt()
     h.tstop = duration
-    h.run(h.tstop)
+    h.run(duration)
 
     end = time.perf_counter()
     elapsed_time = end - start
-    print(f"Elapsed time: {elapsed_time:.2f} seconds")
+    if verbose: print(f"Elapsed time: {elapsed_time:.2f} seconds")
