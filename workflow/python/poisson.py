@@ -25,7 +25,7 @@ weight = float(snakemake.params["weight"])
 np.random.seed(run_id)
 stimulus_seeds = np.random.choice(range(10_000), n_synapses, replace = False)
 
-synapse_info = pd.read_csv("output/ti-network/synapses/synapse_info.csv", index_col = 0)
+synapse_info = pd.read_csv(snakemake.input["synapse_info"], index_col = 0)
 synapse_info = synapse_info.iloc[ (n_synapses * run_id):(n_synapses * (run_id + 1)) ].reset_index(drop = True)
 
 # Create neuron and insert all synapses
@@ -66,24 +66,20 @@ pd.DataFrame({
   "time": neuron.spike_times
 }).to_csv(snakemake.output["neuron_spikes"])
 
+# Collect all synapse weights
 weights = []
-voltages = []
 for synapse in synapses:
   weights.append(synapse.weights)
-  voltages.append(synapse.voltage)
 weights = np.array(weights)
-voltages = np.array(voltages)
+
+# Since weights are mostly stable, keep only unique values
+weights, index = np.unique(weights, axis = 1, return_index = True)
+time = synapses[0].time[index].reshape(-1)
+weights = np.vstack([time, weights])
 
 np.savetxt(
   snakemake.output["synapse_weights"],
-  np.array(weights),
-  delimiter = ",",
-  fmt = "%g"
-)
-
-np.savetxt(
-  snakemake.output["synapse_voltages"],
-  np.array(weights),
+  weights,
   delimiter = ",",
   fmt = "%g"
 )

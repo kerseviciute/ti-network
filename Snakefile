@@ -1,13 +1,15 @@
 import numpy as np
 
 project = "ti-network"
-neurons = np.arange(0, 5)
+n_neurons = 20
+synapses_per_neuron = 10
+neurons = np.arange(0, n_neurons)
 
 include: "rules/poisson.smk"
 
 rule all:
   input:
-    rules.poisson_10_1000_5_130_0.input,
+    rules.poisson_10_1000_5_100_0.input,
     rules.poisson_10_0_0_0_0.input,
     synapse_info = expand("output/{project}/synapses/synapse_info.csv", project = project)
 
@@ -17,7 +19,7 @@ rule synapse_info:
     voltages = "output/{project}/synapses/synapse_voltage.csv",
     times = "output/{project}/synapses/times.csv"
   params:
-    n_synapses = 200,
+    n_synapses = n_neurons * synapses_per_neuron,
     initial_conductance = 0.5,
     target_epsp_diff = 0.15,
     epsilon = 0.025 # Around 0.15 with some variability
